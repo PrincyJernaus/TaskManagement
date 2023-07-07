@@ -41,12 +41,23 @@ public class Task {
     private String filePath;
     private String priority;
     private String frequency;
+
+    public Double getEfforts() {
+        return efforts;
+    }
+
+    public void setEfforts(Double efforts) {
+        this.efforts = efforts;
+    }
+
     private String remarks;
     private Date loggedDate;
 
     private Date dueDate;
     private Timestamp createTimestamp;
     private Timestamp updatedTimestamp;
+
+    private Double efforts;
 
     public Integer getTaskId() {
         return taskId;

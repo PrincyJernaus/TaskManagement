@@ -56,6 +56,7 @@ public class TaskUtilService {
             task.setFrequency(taskDetails.getFrequency());
             task.setProjectId(projectId);
             task.setRemarks(taskDetails.getRemarks());
+            task.setEfforts(taskDetails.getEfforts());
             task.setLoggedDate(taskDetails.getLoggedDate());
             task.setStatus(taskDetails.getStatus());
             task.setPriority(taskDetails.getPriority());
@@ -84,6 +85,22 @@ public class TaskUtilService {
         return null;
     }
 
+    public TaskDetails assignUserTask(TaskDetails taskDetails, Integer projectId) throws NullPointerException {
+        task = taskRepository.findByProjectIdAndTaskId(projectId, taskDetails.getTaskId());
+        if (null != task) {
+            if (null == taskRepository.findByProjectIdAndTaskDescriptionAndTaskCategoryAndAssignedToAndActiveInd(projectId, taskDetails.getTaskDescription(), taskDetails.getTaskCategory(), userUtilService.findUserId(taskDetails.getAssignedToNew()), Constants.TASK_IS_ACTIVE)) {
+                task.setAssignedTo(userUtilService.findUserId(taskDetails.getAssignedToNew()));
+                task.setUpdatedTimestamp(new Timestamp(new Date().getTime()));
+                logger.info(taskDetails.getTaskId() + Constants.TASK_CHANGED_FROM + taskDetails.getAssignedToOld() + " to " + taskDetails.getAssignedToNew());
+                return setTaskDetails(taskRepository.save(task));
+            }
+            logger.info(taskDetails.getTaskDescription() + Constants.TASK_ALREADY_ASSIGNED_FOR + taskDetails.getAssignedToNew());
+            return null;
+        }
+        logger.info(taskDetails.getTaskDescription() + Constants.TASK_NOT_ASSIGNED_FOR + taskDetails.getAssignedToOld());
+        return null;
+    }
+
     public TaskDetails updateTask(TaskDetails taskDetails, Integer projectId) throws NullPointerException, IOException {
         if (null != projectUtilService.findProjectById(projectId)) {
             task = taskRepository.findByProjectIdAndTaskId(projectId, taskDetails.getTaskId());
@@ -97,6 +114,7 @@ public class TaskUtilService {
                 task.setRemarks((String) getValue(task.getRemarks(), taskDetails.getRemarks()));
                 task.setFilePath((String) getValue(task.getFilePath(), taskDetails.getFilePath()));
                 task.setStatus((String) getValue(task.getStatus(), taskDetails.getStatus()));
+                task.setEfforts((Double) getValue(task.getEfforts(), taskDetails.getEfforts()));
                 task.setUpdatedTimestamp(new Timestamp(new Date().getTime()));
                 task.setDueDate((Date) getValue(task.getDueDate(), taskDetails.getDueDate()));
                 logger.info(taskDetails.getTaskDescription() + Constants.TASK_UPDATED_FOR + taskDetails.getAssignedTo());
@@ -126,7 +144,7 @@ public class TaskUtilService {
     }
 
     public TaskDetails deleteTask(TaskDetails taskDetails, Integer projectId) throws NullPointerException {
-        task = taskRepository.findByProjectIdAndTaskDescriptionAndTaskCategoryAndAssignedToAndAssignedBy(projectId, taskDetails.getTaskDescription(), taskDetails.getTaskCategory(), userUtilService.findUserId(taskDetails.getAssignedTo()), userUtilService.findUserId(taskDetails.getAssignedBy()));
+        task = taskRepository.findByProjectIdAndTaskIdAndTaskDescriptionAndTaskCategoryAndAssignedToAndAssignedBy(projectId, taskDetails.getTaskId(), taskDetails.getTaskDescription(), taskDetails.getTaskCategory(), userUtilService.findUserId(taskDetails.getAssignedTo()), userUtilService.findUserId(taskDetails.getAssignedBy()));
         if (null != task) {
             taskRepository.delete(task);
             logger.info(taskDetails.getTaskDescription() + Constants.TASK_DELETED_FOR + taskDetails.getAssignedTo());
@@ -150,6 +168,10 @@ public class TaskUtilService {
 
     public List<TaskDetails> viewUserAllTask(Integer projectId, Integer userId) throws NullPointerException {
         return null != projectUtilService.findProjectById(projectId) ? getTaskDetailsList(taskRepository.findAllByProjectIdAndAssignedTo(projectId, userId)) : null;
+    }
+
+    public List<TaskDetails> viewManagerAllTask(Integer projectId, Integer userId) throws NullPointerException {
+        return getTaskDetailsList(taskRepository.findAllByProjectIdAndAssignedBy(projectId, userId));
     }
 
     private Object getValue(Object oldValue, Object newValue) {
@@ -178,6 +200,7 @@ public class TaskUtilService {
             taskDetails.setActiveInd(task.getActiveInd());
             taskDetails.setFilePath(task.getFilePath());
             taskDetails.setPriority(task.getPriority());
+            taskDetails.setEfforts(task.getEfforts());
             taskDetails.setFrequency(task.getFrequency());
             taskDetails.setRemarks(task.getRemarks());
             taskDetails.setLoggedDate(task.getLoggedDate());
@@ -195,6 +218,43 @@ public class TaskUtilService {
             }
         }
         return 0;
+    }
+
+    public List<TaskDetails> fetchManagerCrossDueTask(Integer projectId, Integer userId) {
+        List<Task> taskDueList = taskRepository.findAllByProjectIdAndAssignedByAndActiveInd(projectId, userId, Constants.TASK_IS_ACTIVE);
+        if (null != taskDueList) {
+            taskDueList = taskDueList.stream().filter(val -> {
+                if (!Objects.equals(val.getStatus(), Constants.TASK_STATUS_COMPLETED) && !Objects.equals(val.getStatus(), Constants.TASK_STATUS_CLOSED)) {
+                    logger.info(val.getTaskDescription() + Constants.DUE_DATE_FOUND_MSG + val.getDueDate());
+                    return checkCrossDueDate(val.getDueDate());
+                }
+                return false;
+            }).collect(Collectors.toList());
+            return getTaskDetailsList(taskDueList);
+        }
+        logger.warning(Constants.TASK_NOT_FOUND_MSG);
+        return Collections.emptyList();
+    }
+
+    public List<TaskDetails> fetchManagerDueTask(Integer projectId, Integer userId, long dueStartDays, long dueEndDays) {
+        List<Task> taskDueList = taskRepository.findAllByProjectIdAndAssignedByAndActiveInd(projectId, userId, Constants.TASK_IS_ACTIVE);
+        if (null != taskDueList) {
+            taskDueList = taskDueList.stream().filter(val -> {
+                if (!Objects.equals(val.getStatus(), Constants.TASK_STATUS_COMPLETED) && !Objects.equals(val.getStatus(), Constants.TASK_STATUS_CLOSED)) {
+                    try {
+                        logger.info(val.getTaskDescription() + Constants.DUE_DATE_FOUND_MSG + val.getDueDate());
+                        return checkDueDate(val.getDueDate(), dueStartDays, dueEndDays);
+                    } catch (ParseException e) {
+                        logger.warning(Constants.DUE_DATE_NOT_FOUND_MSG + e.getMessage());
+                        return false;
+                    }
+                }
+                return false;
+            }).collect(Collectors.toList());
+            return getTaskDetailsList(taskDueList);
+        }
+        logger.warning(Constants.TASK_NOT_FOUND_MSG);
+        return Collections.emptyList();
     }
 
     public List<TaskDetails> fetchDueTask(Integer projectId, long dueStartDays, long dueEndDays) {
@@ -276,6 +336,7 @@ public class TaskUtilService {
     }
 
     public boolean checkDueDate(Date dueDate, long dueStartDays, long dueEndDays) throws ParseException {
+        logger.info("Due Start Days ::" + dueStartDays + "Due End Days ::" +  dueEndDays + "Task Day Difference ::" + taskDayDiff(dueDate));
         switch ((int) dueEndDays) {
             case 2:
             case 5:
@@ -288,7 +349,7 @@ public class TaskUtilService {
 
     public Long taskDayDiff(Date dueDate) throws ParseException {
         SimpleDateFormat sdf = new SimpleDateFormat(Constants.DUE_DATE_FORMAT, Locale.ENGLISH);
-        return TimeUnit.DAYS.convert(Math.abs(dueDate.getTime() - sdf.parse(formatter.format(new Date())).getTime()), TimeUnit.MILLISECONDS);
+        return TimeUnit.DAYS.convert(dueDate.getTime() - sdf.parse(formatter.format(new Date())).getTime(), TimeUnit.MILLISECONDS);
     }
 
     public static boolean isPastDate(final String date) {

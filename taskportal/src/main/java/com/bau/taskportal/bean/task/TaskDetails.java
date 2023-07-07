@@ -30,6 +30,29 @@ public class TaskDetails {
     private Date dueDate;
     private String remarks;
 
+    private String projectName;
+    private String managerName;
+
+    public Double getEfforts() {
+        return efforts;
+    }
+
+    public void setEfforts(Double efforts) {
+        this.efforts = efforts;
+    }
+
+    private String taskStatus;
+
+    private Double efforts;
+
+    public String getTaskStatus() {
+        return taskStatus;
+    }
+
+    public void setTaskStatus(String taskStatus) {
+        this.taskStatus = taskStatus;
+    }
+
     private byte[] attachment;
 
     public byte[] getAttachment() {
@@ -38,6 +61,22 @@ public class TaskDetails {
 
     public void setAttachment(byte[] attachment) {
         this.attachment = attachment;
+    }
+
+    public String getProjectName() {
+        return projectName;
+    }
+
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
+    }
+
+    public String getManagerName() {
+        return managerName;
+    }
+
+    public void setManagerName(String managerName) {
+        this.managerName = managerName;
     }
 
     public String getRemarks() {

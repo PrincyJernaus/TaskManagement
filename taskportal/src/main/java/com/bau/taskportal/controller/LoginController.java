@@ -5,8 +5,10 @@ import com.bau.taskportal.bean.project.ProjectDetails;
 import com.bau.taskportal.bean.project.RegionClass;
 import com.bau.taskportal.bean.user.UserDetails;
 import com.bau.taskportal.constant.Constants;
+import com.bau.taskportal.entity.Task;
 import com.bau.taskportal.entity.User;
 import com.bau.taskportal.repository.ProjectRepository;
+import com.bau.taskportal.repository.TaskRepository;
 import com.bau.taskportal.repository.UserRepository;
 import com.bau.taskportal.util.project.ProjectUtilService;
 import com.bau.taskportal.util.user.UserUtilService;
@@ -14,8 +16,10 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -37,6 +41,9 @@ public class LoginController {
 
     @Autowired
     private ProjectRepository projectRepository;
+
+    @Autowired
+    TaskRepository taskRepository;
 
     private UserDetails userDetails;
 
@@ -87,14 +94,42 @@ public class LoginController {
         return users;
     }
 
-    @GetMapping("/unassignedUsers")
-    public List<User> getUnassignedUsers() {
+    @GetMapping("/users/team/{taskId}")
+    public List<User> getUsersForProject(@PathVariable int taskId) {
+        logger.info("Inside getUsersForProject");
+        int projectId = 0;
+        Optional<Task> task = taskRepository.findById(taskId);
+        if(task.isPresent())
+        {
+            projectId = task.get().getProjectId();
+        }
+        logger.info("project Id :: " + projectId);
+        List<User> users = projectUtilService.getUsersForProject(projectId);
+        logger.info("users assigned ::" + users.size());
+        return users;
+    }
+
+    @GetMapping("/unassignedUsers/{projectName}")
+    public List<User> getUnassignedUsers(@PathVariable String projectName) {
         logger.info("Inside getUnassignedUsers");
-        List<User> unassignedUsers = null;
+        List<User> unassignedUsersList = new ArrayList<>();
         List<User> users = userRepository.findAllByRole("user");
-        unassignedUsers = users.stream().filter(user -> Objects.isNull(user.getProjectId())).collect(Collectors.toList());
-        logger.info("users unassigned ::" + unassignedUsers.size());
-        return unassignedUsers;
+        Integer projectId = projectRepository.findByProjectName(projectName).getProjectId();
+        logger.info("project Id :: " + projectId);
+        List<User> assignedUsers = projectUtilService.getUsersForProject(projectId);
+        List<User> unassignedUsers = users.stream().filter(user -> assignedUsers.stream().
+                        noneMatch(user1 -> user1.getUserId().equals(user.getUserId()))).collect(Collectors.toList());
+        logger.info("users unassigned Before::" + unassignedUsers.size());
+        for(User user : unassignedUsers)
+        {
+            if(user == null || (user != null && user.getProjectId() == null))
+            {
+
+                unassignedUsersList.add(user);
+            }
+        }
+        logger.info("users unassigned ::" + unassignedUsersList.size());
+        return unassignedUsersList;
     }
 
 }

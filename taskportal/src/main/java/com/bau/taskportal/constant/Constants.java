@@ -7,6 +7,12 @@ public class Constants {
 
     public static final String TASK_IS_ACTIVE = "Active";
 
+    public static final String TASK = "TASK";
+
+    public static final String CHANGE_DISCRIPTION = "Task Reassigned By Manager";
+
+    public static final String CHANGE_USER_DISCRIPTION = "Task Reassigned By User";
+
     public static final String TASK_STATUS_COMPLETED = "Completed";
     public static final String TASK_STATUS_CLOSED = "Closed";
     public static final String TASK_IS_NEW = "New";
@@ -35,4 +41,9 @@ public class Constants {
     public static final String DUE_DATE_FOUND_MSG = " Due date found :";
 
     public static final String PROJECT_DELETED_FOR = " project deleted for ";
+
+    public static final String CHANGE_HISTORY_START_MSG = "Change History Start";
+
+    public static final String CHANGE_HISTORY_END_MSG = "Change History End";
+    public static final String HISTORY_NOT_SAVED_MSG = "Change History Not Saved!!! ";
 }

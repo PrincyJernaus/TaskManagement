@@ -1,5 +1,6 @@
 com\bau\taskportal\entity\Task.class
 com\bau\taskportal\repository\UserRepository.class
+com\bau\taskportal\util\report\ReportUtilService.class
 com\bau\taskportal\entity\Project.class
 com\bau\taskportal\bean\task\TaskDetails.class
 com\bau\taskportal\util\task\TaskUtilService.class

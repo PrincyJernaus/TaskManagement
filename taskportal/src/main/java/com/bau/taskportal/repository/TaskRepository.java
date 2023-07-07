@@ -15,15 +15,19 @@ public interface TaskRepository extends JpaRepository<Task, Integer> {
 
     List<Task> findAllByProjectIdAndAssignedTo(int projectId, int assignedTo);
 
+    List<Task> findAllByProjectIdAndAssignedBy(int projectId, int assignedBy);
+
     List<Task> findAllByProjectIdAndActiveInd(int projectId, String activeInd);
 
     List<Task> findAllByProjectIdAndAssignedToAndActiveInd(int projectId, int assignedTo, String activeInd);
+
+    List<Task> findAllByProjectIdAndAssignedByAndActiveInd(int projectId, int assignedBy, String activeInd);
 
     Task findByProjectIdAndTaskDescriptionAndTaskCategoryAndAssignedToAndActiveInd(int projectId, String taskDescription, String taskCategory, int assignedTo, String ActiveInd);
 
     Task findByProjectIdAndTaskDescriptionAndTaskCategoryAndAssignedToAndAssignedByAndActiveInd(int projectId, String taskDescription, String taskCategory, int assignedTo, int assignedBy, String ActiveInd);
 
-    Task findByProjectIdAndTaskDescriptionAndTaskCategoryAndAssignedToAndAssignedBy(int projectId, String taskDescription, String taskCategory, int assignedTo, int assignedBy);
+    Task findByProjectIdAndTaskIdAndTaskDescriptionAndTaskCategoryAndAssignedToAndAssignedBy(int projectId, int taskId, String taskDescription, String taskCategory, int assignedTo, int assignedBy);
 
     Task findByProjectIdAndTaskId(int projectId, int taskId);
 

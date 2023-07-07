@@ -99,6 +99,14 @@ public class ProjectUtilService {
         return getProjectDetailsList(projectRepository.findAllByAssignedFor(userUtilService.findUserId(regionClass.getAssignedFor())));
     }
 
+    public List<ProjectDetails> fetchAllProjectByUserName(String userName) throws NullPointerException {
+        return getProjectDetailsList(projectRepository.findAllByAssignedFor(userUtilService.findUserId(userName)));
+    }
+
+    public List<ProjectDetails> fetchAllProjectByUserId(Integer userId) throws NullPointerException {
+        return getProjectDetailsList(projectRepository.findAllByAssignedFor(userId));
+    }
+
     public ProjectDetails findProjectByName(String projectName) throws NullPointerException {
         return setProjectDetails(projectRepository.findByProjectName(projectName));
     }
